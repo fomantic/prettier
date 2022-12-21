@@ -906,11 +906,11 @@ function genericPrint(path, options, print) {
 
       if (!node.open) {
         const printed = path.map(print, "groups");
-        const res = [];
+        const res = [hardline];
 
         for (let i = 0; i < printed.length; i++) {
           if (i !== 0) {
-            res.push([",", line]);
+            res.push([",", hardline]);
           }
           res.push(printed[i]);
         }
