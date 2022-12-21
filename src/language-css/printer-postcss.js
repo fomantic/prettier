@@ -905,12 +905,17 @@ function genericPrint(path, options, print) {
       }
 
       if (!node.open) {
+        const origValueText = options.originalText.slice(
+          locStart(path.getParentNode(2)),
+          locEnd(path.getParentNode(2))
+        );
+        const forceHardLine = origValueText.includes("\n");
         const printed = path.map(print, "groups");
-        const res = [hardline];
+        const res = forceHardLine ? [hardline] : [];
 
         for (let i = 0; i < printed.length; i++) {
           if (i !== 0) {
-            res.push([",", hardline]);
+            res.push([",", forceHardLine ? hardline : line]);
           }
           res.push(printed[i]);
         }
