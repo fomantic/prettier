@@ -101,7 +101,10 @@ function genericPrint(path, options, print) {
       return [node.raw, hardline];
     case "css-root": {
       const nodes = printNodeSequence(path, options, print);
-      const after = node.raws.after.trim();
+      let after = node.raws.after.trim();
+      if (after.startsWith(";")) {
+        after = after.slice(1).trim();
+      }
 
       return [
         nodes,
@@ -155,7 +158,12 @@ function genericPrint(path, options, print) {
 
       return [
         node.raws.before.replace(/[\s;]/g, ""),
-        insideICSSRuleNode(path) ? node.prop : maybeToLowerCase(node.prop),
+        (parentNode.type === "css-atrule" &&
+          typeof parentNode.raws.params === "string" &&
+          parentNode.raws.params.startsWith(":")) ||
+        insideICSSRuleNode(path)
+          ? node.prop
+          : maybeToLowerCase(node.prop),
         trimmedBetween.startsWith("//") ? " " : "",
         trimmedBetween,
         node.extend ? "" : " ",
@@ -744,6 +752,18 @@ function genericPrint(path, options, print) {
           continue;
         }
 
+        // No space before unary minus followed by an opening parenthesis `-(`
+        if (
+          (options.parser === "scss" || options.parser === "less") &&
+          isMathOperator &&
+          iNode.value === "-" &&
+          isParenGroupNode(iNextNode) &&
+          locEnd(iNode) === locStart(iNextNode.open) &&
+          iNextNode.open.value === "("
+        ) {
+          continue;
+        }
+
         // Add `hardline` after inline comment (i.e. `// comment\n foo: bar;`)
         if (isInlineValueCommentNode(iNode)) {
           if (parentNode.type === "value-paren_group") {
@@ -886,11 +906,11 @@ function genericPrint(path, options, print) {
 
       if (!node.open) {
         const printed = path.map(print, "groups");
-        const res = [];
+        const res = [hardline];
 
         for (let i = 0; i < printed.length; i++) {
           if (i !== 0) {
-            res.push([",", line]);
+            res.push([",", hardline]);
           }
           res.push(printed[i]);
         }
